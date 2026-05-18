@@ -4,3 +4,4 @@
 crash.log
 .terraform.lock.hcl
 *.tfvars
+.DS_Store
