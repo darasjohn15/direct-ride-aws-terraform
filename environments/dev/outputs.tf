@@ -88,6 +88,26 @@ output "db_security_group_id" {
   value       = module.database.db_security_group_id
 }
 
+output "backend_api_ecr_repository_name" {
+  description = "Name of the dev backend API ECR repository."
+  value       = module.ecr.repository_name
+}
+
+output "backend_api_ecr_repository_arn" {
+  description = "ARN of the dev backend API ECR repository."
+  value       = module.ecr.repository_arn
+}
+
+output "backend_api_ecr_repository_url" {
+  description = "URL of the dev backend API ECR repository."
+  value       = module.ecr.repository_url
+}
+
+output "backend_api_container_image" {
+  description = "Container image URI used by the dev backend API ECS task."
+  value       = "${module.ecr.repository_url}:${var.backend_api_image_tag}"
+}
+
 output "backend_api_ecs_cluster_name" {
   description = "Name of the dev backend API ECS cluster."
   value       = module.compute.ecs_cluster_name
@@ -126,4 +146,44 @@ output "backend_api_alb_security_group_id" {
 output "backend_api_ecs_security_group_id" {
   description = "ID of the dev backend API ECS task security group."
   value       = module.compute.ecs_security_group_id
+}
+
+output "github_actions_oidc_provider_arn" {
+  description = "ARN of the dev GitHub Actions OIDC provider, when enabled."
+  value       = module.security.github_actions_oidc_provider_arn
+}
+
+output "github_actions_deploy_role_arn" {
+  description = "ARN of the dev GitHub Actions deploy role, when enabled."
+  value       = module.security.github_actions_deploy_role_arn
+}
+
+output "backend_api_task_execution_role_arn" {
+  description = "ARN of the dev backend API ECS task execution role."
+  value       = module.security.ecs_task_execution_role_arn
+}
+
+output "backend_api_task_application_role_arn" {
+  description = "ARN of the dev backend API ECS task application role."
+  value       = module.security.ecs_task_application_role_arn
+}
+
+output "jwt_secret_arn" {
+  description = "ARN of the dev JWT Secrets Manager secret."
+  value       = module.security.jwt_secret_arn
+}
+
+output "jwt_secret_name" {
+  description = "Name of the dev JWT Secrets Manager secret."
+  value       = module.security.jwt_secret_name
+}
+
+output "app_config_parameter_path_prefix" {
+  description = "SSM Parameter Store path prefix for dev backend API app config."
+  value       = module.security.app_config_parameter_path_prefix
+}
+
+output "app_config_parameter_arns" {
+  description = "ARNs of the dev SSM app config parameters managed by Terraform."
+  value       = module.security.app_config_parameter_arns
 }

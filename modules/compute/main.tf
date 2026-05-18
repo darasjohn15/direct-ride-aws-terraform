@@ -1,26 +1,3 @@
-data "aws_iam_policy_document" "ecs_task_execution_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
-}
-
-data "aws_iam_policy_document" "task_execution_secrets" {
-  count = length(var.secret_access_arns) > 0 ? 1 : 0
-
-  statement {
-    actions = [
-      "secretsmanager:GetSecretValue",
-    ]
-
-    resources = var.secret_access_arns
-  }
-}
-
 locals {
   container_name = "api"
 
@@ -61,35 +38,14 @@ resource "aws_cloudwatch_log_group" "api" {
   })
 }
 
-resource "aws_iam_role" "task_execution" {
-  name               = "${var.name_prefix}-api-task-execution-role"
-  assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role.json
-
-  tags = merge(var.tags, {
-    Name = "${var.name_prefix}-api-task-execution-role"
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "task_execution" {
-  role       = aws_iam_role.task_execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-resource "aws_iam_role_policy" "task_execution_secrets" {
-  count = length(var.secret_access_arns) > 0 ? 1 : 0
-
-  name   = "${var.name_prefix}-api-task-execution-secrets"
-  role   = aws_iam_role.task_execution.id
-  policy = data.aws_iam_policy_document.task_execution_secrets[0].json
-}
-
 resource "aws_ecs_task_definition" "api" {
   family                   = "${var.name_prefix}-api"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = var.task_cpu
   memory                   = var.task_memory
-  execution_role_arn       = aws_iam_role.task_execution.arn
+  execution_role_arn       = var.task_execution_role_arn
+  task_role_arn            = var.task_role_arn
 
   container_definitions = jsonencode([
     {
@@ -128,7 +84,7 @@ data "aws_region" "current" {}
 
 resource "aws_security_group" "alb" {
   name        = "${var.name_prefix}-api-alb-sg"
-  description = "Allow public HTTP traffic to the ${var.name_prefix} API ALB"
+  description = "Allow public web traffic to the ${var.name_prefix} API ALB"
   vpc_id      = var.vpc_id
 
   tags = merge(var.tags, {
@@ -147,8 +103,10 @@ resource "aws_security_group" "ecs_tasks" {
 }
 
 resource "aws_security_group_rule" "alb_ingress_http" {
+  count = var.enable_http_ingress ? 1 : 0
+
   type              = "ingress"
-  description       = "HTTP from internet"
+  description       = "Optional HTTP from internet for redirect"
   security_group_id = aws_security_group.alb.id
   from_port         = 80
   to_port           = 80
@@ -156,9 +114,19 @@ resource "aws_security_group_rule" "alb_ingress_http" {
   cidr_blocks       = ["0.0.0.0/0"]
 }
 
+resource "aws_security_group_rule" "alb_ingress_https" {
+  type              = "ingress"
+  description       = "HTTPS from internet"
+  security_group_id = aws_security_group.alb.id
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
 resource "aws_security_group_rule" "alb_egress_ecs" {
   type                     = "egress"
-  description              = "HTTP to ECS tasks"
+  description              = "API traffic to ECS tasks"
   security_group_id        = aws_security_group.alb.id
   from_port                = var.container_port
   to_port                  = var.container_port
@@ -259,8 +227,6 @@ resource "aws_ecs_service" "api" {
   })
 
   depends_on = [
-    aws_iam_role_policy_attachment.task_execution,
-    aws_iam_role_policy.task_execution_secrets,
     aws_lb_listener.http,
   ]
 }

@@ -53,6 +53,12 @@ variable "health_check_path" {
   default     = "/health"
 }
 
+variable "enable_http_ingress" {
+  description = "Whether to allow public HTTP traffic to the API load balancer. Keep enabled when HTTP will redirect to HTTPS."
+  type        = bool
+  default     = true
+}
+
 variable "environment_variables" {
   description = "Plain environment variables passed to the backend API container."
   type        = map(string)
@@ -65,10 +71,14 @@ variable "secrets" {
   default     = {}
 }
 
-variable "secret_access_arns" {
-  description = "Secrets Manager secret ARNs that the task execution role can read for container secrets."
-  type        = list(string)
-  default     = []
+variable "task_execution_role_arn" {
+  description = "IAM role ARN used by ECS to pull images, write logs, and resolve container secrets."
+  type        = string
+}
+
+variable "task_role_arn" {
+  description = "IAM role ARN assumed by the backend API container at runtime."
+  type        = string
 }
 
 variable "tags" {

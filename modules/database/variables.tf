@@ -13,12 +13,6 @@ variable "db_subnet_group_name" {
   type        = string
 }
 
-variable "allowed_cidr_blocks" {
-  description = "CIDR blocks allowed to connect to PostgreSQL."
-  type        = list(string)
-  default     = []
-}
-
 variable "db_name" {
   description = "Initial PostgreSQL database name."
   type        = string

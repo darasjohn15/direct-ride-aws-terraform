@@ -64,9 +64,46 @@ variable "db_skip_final_snapshot" {
   default     = true
 }
 
-variable "backend_api_container_image" {
-  description = "Container image used by the backend API ECS task."
+variable "backend_api_image_tag" {
+  description = "Image tag from the backend API ECR repository used by the ECS task."
   type        = string
+  default     = "latest"
+}
+
+variable "backend_api_ecr_repository_name" {
+  description = "Optional explicit ECR repository name for the backend API image."
+  type        = string
+  default     = null
+}
+
+variable "backend_api_ecr_image_tag_mutability" {
+  description = "Tag mutability setting for the backend API ECR repository."
+  type        = string
+  default     = "MUTABLE"
+}
+
+variable "backend_api_ecr_scan_on_push" {
+  description = "Whether ECR scans backend API images when they are pushed."
+  type        = bool
+  default     = true
+}
+
+variable "backend_api_ecr_force_delete" {
+  description = "Whether Terraform can delete the backend API ECR repository even when it contains images."
+  type        = bool
+  default     = false
+}
+
+variable "backend_api_ecr_untagged_image_retention_days" {
+  description = "Number of days to retain untagged backend API images."
+  type        = number
+  default     = 14
+}
+
+variable "backend_api_ecr_tagged_image_retention_count" {
+  description = "Number of tagged backend API images to retain."
+  type        = number
+  default     = 30
 }
 
 variable "backend_api_container_port" {
@@ -97,4 +134,70 @@ variable "backend_api_health_check_path" {
   description = "HTTP path used by the backend API target group health check."
   type        = string
   default     = "/health"
+}
+
+variable "backend_api_enable_http_ingress" {
+  description = "Whether to allow public HTTP traffic to the backend API load balancer. Keep enabled when HTTP will redirect to HTTPS."
+  type        = bool
+  default     = true
+}
+
+variable "github_repository" {
+  description = "GitHub repository allowed to assume the deploy role, in owner/name format. Leave null to skip GitHub OIDC resources."
+  type        = string
+  default     = null
+}
+
+variable "github_branch" {
+  description = "Git branch allowed to assume the GitHub Actions deploy role."
+  type        = string
+  default     = "main"
+}
+
+variable "ecr_repository_arns" {
+  description = "Additional ECR repository ARNs GitHub Actions can push images to."
+  type        = list(string)
+  default     = []
+}
+
+variable "cloudfront_distribution_arns" {
+  description = "CloudFront distribution ARNs GitHub Actions can invalidate. Defaults to all distributions until CloudFront is added."
+  type        = list(string)
+  default     = []
+}
+
+variable "jwt_secret_name" {
+  description = "Optional explicit name for the dev JWT Secrets Manager secret."
+  type        = string
+  default     = null
+}
+
+variable "jwt_secret_length" {
+  description = "Length of the generated dev JWT secret value."
+  type        = number
+  default     = 64
+}
+
+variable "app_config_parameter_path_prefix" {
+  description = "SSM Parameter Store path prefix for dev backend API app config."
+  type        = string
+  default     = null
+}
+
+variable "app_config_parameters" {
+  description = "Non-secret dev backend API config values to create in SSM Parameter Store. Keys are relative parameter names."
+  type        = map(string)
+  default     = {}
+}
+
+variable "uploads_bucket_arn" {
+  description = "Optional uploads S3 bucket ARN the backend API task role can read and write."
+  type        = string
+  default     = null
+}
+
+variable "enable_ses_permissions" {
+  description = "Whether to allow the backend API task role to send email through SES."
+  type        = bool
+  default     = false
 }
