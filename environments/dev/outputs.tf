@@ -87,3 +87,43 @@ output "db_security_group_id" {
   description = "ID of the dev PostgreSQL security group."
   value       = module.database.db_security_group_id
 }
+
+output "backend_api_ecs_cluster_name" {
+  description = "Name of the dev backend API ECS cluster."
+  value       = module.compute.ecs_cluster_name
+}
+
+output "backend_api_ecs_service_name" {
+  description = "Name of the dev backend API ECS service."
+  value       = module.compute.ecs_service_name
+}
+
+output "backend_api_task_definition_arn" {
+  description = "ARN of the dev backend API task definition."
+  value       = module.compute.ecs_task_definition_arn
+}
+
+output "backend_api_alb_dns_name" {
+  description = "DNS name of the dev backend API application load balancer."
+  value       = module.compute.alb_dns_name
+}
+
+output "backend_api_alb_url" {
+  description = "HTTP URL for the dev backend API application load balancer."
+  value       = module.compute.alb_url
+}
+
+output "backend_api_target_group_arn" {
+  description = "ARN of the dev backend API target group."
+  value       = module.compute.target_group_arn
+}
+
+output "backend_api_alb_security_group_id" {
+  description = "ID of the dev backend API ALB security group."
+  value       = module.compute.alb_security_group_id
+}
+
+output "backend_api_ecs_security_group_id" {
+  description = "ID of the dev backend API ECS task security group."
+  value       = module.compute.ecs_security_group_id
+}

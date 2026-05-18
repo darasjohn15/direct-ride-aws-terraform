@@ -63,3 +63,38 @@ variable "db_skip_final_snapshot" {
   type        = bool
   default     = true
 }
+
+variable "backend_api_container_image" {
+  description = "Container image used by the backend API ECS task."
+  type        = string
+}
+
+variable "backend_api_container_port" {
+  description = "Port exposed by the backend API container."
+  type        = number
+  default     = 8080
+}
+
+variable "backend_api_desired_count" {
+  description = "Desired number of backend API ECS tasks."
+  type        = number
+  default     = 1
+}
+
+variable "backend_api_task_cpu" {
+  description = "CPU units allocated to the backend API Fargate task."
+  type        = number
+  default     = 256
+}
+
+variable "backend_api_task_memory" {
+  description = "Memory in MiB allocated to the backend API Fargate task."
+  type        = number
+  default     = 512
+}
+
+variable "backend_api_health_check_path" {
+  description = "HTTP path used by the backend API target group health check."
+  type        = string
+  default     = "/health"
+}

@@ -63,3 +63,36 @@ module "database" {
 
   tags = local.common_tags
 }
+
+module "compute" {
+  source = "../../modules/compute"
+
+  name_prefix            = local.name_prefix
+  vpc_id                 = module.networking.vpc_id
+  public_subnet_ids      = module.networking.public_subnet_ids
+  private_app_subnet_ids = module.networking.private_app_subnet_ids
+
+  container_image   = var.backend_api_container_image
+  container_port    = var.backend_api_container_port
+  desired_count     = var.backend_api_desired_count
+  task_cpu          = var.backend_api_task_cpu
+  task_memory       = var.backend_api_task_memory
+  health_check_path = var.backend_api_health_check_path
+
+  environment_variables = {
+    DB_HOST = module.database.db_address
+    DB_NAME = module.database.db_name
+    DB_PORT = tostring(module.database.db_port)
+    DB_USER = module.database.db_username
+  }
+
+  secrets = {
+    DB_PASSWORD = "${module.database.db_master_user_secret_arn}:password::"
+  }
+
+  secret_access_arns = [
+    module.database.db_master_user_secret_arn,
+  ]
+
+  tags = local.common_tags
+}
