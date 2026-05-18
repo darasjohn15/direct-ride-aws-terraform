@@ -18,6 +18,11 @@ output "private_app_subnet_ids" {
   value       = [for az in var.availability_zones : aws_subnet.private_app[az].id]
 }
 
+output "private_app_subnet_cidrs" {
+  description = "CIDR blocks of the private application subnets."
+  value       = [for az in var.availability_zones : aws_subnet.private_app[az].cidr_block]
+}
+
 output "private_db_subnet_ids" {
   description = "IDs of the private database subnets."
   value       = [for az in var.availability_zones : aws_subnet.private_db[az].id]
