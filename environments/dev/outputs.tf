@@ -103,6 +103,21 @@ output "backend_api_ecr_repository_url" {
   value       = module.ecr.repository_url
 }
 
+output "budget_name" {
+  description = "Name of the dev monthly cost budget."
+  value       = module.budget.budget_name
+}
+
+output "budget_arn" {
+  description = "ARN of the dev monthly cost budget."
+  value       = module.budget.budget_arn
+}
+
+output "budget_limit_amount" {
+  description = "Monthly limit amount for the dev cost budget."
+  value       = module.budget.limit_amount
+}
+
 output "backend_api_container_image" {
   description = "Container image URI used by the dev backend API ECS task."
   value       = "${module.ecr.repository_url}:${var.backend_api_image_tag}"
@@ -156,6 +171,21 @@ output "github_actions_oidc_provider_arn" {
 output "github_actions_deploy_role_arn" {
   description = "ARN of the dev GitHub Actions deploy role, when enabled."
   value       = module.security.github_actions_deploy_role_arn
+}
+
+output "frontend_deploy_role_arn" {
+  description = "ARN of the dev frontend GitHub Actions deploy role."
+  value       = module.frontend_github_oidc_deploy_role.role_arn
+}
+
+output "frontend_deploy_role_name" {
+  description = "Name of the dev frontend GitHub Actions deploy role."
+  value       = module.frontend_github_oidc_deploy_role.role_name
+}
+
+output "frontend_cloudfront_distribution_id" {
+  description = "CloudFront distribution ID for the dev frontend site."
+  value       = var.cloudfront_distribution_id
 }
 
 output "backend_api_task_execution_role_arn" {

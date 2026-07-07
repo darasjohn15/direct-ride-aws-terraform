@@ -4,7 +4,7 @@ variable "name_prefix" {
 }
 
 variable "website_bucket_name" {
-  description = "Optional explicit name for the frontend website bucket. Leave null to generate an account-scoped name."
+  description = "Optional explicit name for the frontend website bucket. Leave null to use the environment-scoped default name."
   type        = string
   default     = null
 }

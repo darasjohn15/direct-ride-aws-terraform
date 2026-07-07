@@ -1,9 +1,5 @@
-data "aws_caller_identity" "current" {}
-
-data "aws_region" "current" {}
-
 locals {
-  generated_website_bucket_name = lower("${var.name_prefix}-frontend-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.name}")
+  generated_website_bucket_name = lower("${var.name_prefix}-frontend")
   website_bucket_name           = coalesce(var.website_bucket_name, local.generated_website_bucket_name)
 }
 

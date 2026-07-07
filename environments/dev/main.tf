@@ -1,5 +1,9 @@
 locals {
   name_prefix = "${var.project_name}-${var.environment}"
+  frontend_website_bucket_name = coalesce(
+    var.frontend_website_bucket_name,
+    "direct-ride-${var.environment}-frontend"
+  )
 
   common_tags = {
     Project     = var.project_name
@@ -40,7 +44,7 @@ module "storage" {
   source = "../../modules/storage"
 
   name_prefix         = local.name_prefix
-  website_bucket_name = var.frontend_website_bucket_name
+  website_bucket_name = local.frontend_website_bucket_name
 
   tags = local.common_tags
 }
@@ -73,6 +77,33 @@ module "ecr" {
   force_delete                  = var.backend_api_ecr_force_delete
   untagged_image_retention_days = var.backend_api_ecr_untagged_image_retention_days
   tagged_image_retention_count  = var.backend_api_ecr_tagged_image_retention_count
+
+  tags = local.common_tags
+}
+
+module "budget" {
+  source = "../../modules/budget"
+
+  name_prefix        = local.name_prefix
+  notification_email = var.notification_email
+
+  tags = local.common_tags
+}
+
+module "frontend_github_oidc_deploy_role" {
+  source = "../../modules/github-oidc-deploy-role"
+
+  name_prefix = local.name_prefix
+  role_name   = "${local.name_prefix}-frontend-deploy-role"
+
+  github_org    = var.github_org
+  github_repo   = var.github_repo
+  github_branch = var.github_branch
+
+  github_oidc_provider_arn = var.frontend_github_oidc_provider_arn
+
+  frontend_bucket_arn         = module.storage.frontend_website_bucket_arn
+  cloudfront_distribution_arn = var.cloudfront_distribution_arn
 
   tags = local.common_tags
 }

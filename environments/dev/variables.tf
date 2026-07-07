@@ -19,7 +19,7 @@ variable "environment" {
 variable "frontend_website_bucket_name" {
   description = "Optional explicit S3 bucket name for hosting the frontend website."
   type        = string
-  default     = null
+  default     = "direct-ride-frontend-dev"
 }
 
 variable "db_name" {
@@ -106,6 +106,17 @@ variable "backend_api_ecr_tagged_image_retention_count" {
   default     = 30
 }
 
+variable "notification_email" {
+  description = "Email address that receives dev AWS Budget notifications."
+  type        = string
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.notification_email))
+    error_message = "notification_email must be a valid email address."
+  }
+}
+
 variable "backend_api_container_port" {
   description = "Port exposed by the backend API container."
   type        = number
@@ -148,10 +159,26 @@ variable "github_repository" {
   default     = null
 }
 
+variable "github_org" {
+  description = "GitHub organization or username that owns the frontend repository."
+  type        = string
+}
+
+variable "github_repo" {
+  description = "GitHub frontend repository name allowed to assume the frontend deploy role."
+  type        = string
+}
+
 variable "github_branch" {
   description = "Git branch allowed to assume the GitHub Actions deploy role."
   type        = string
   default     = "main"
+}
+
+variable "frontend_github_oidc_provider_arn" {
+  description = "Existing GitHub Actions OIDC provider ARN to reuse for the frontend deploy role. Leave null to create one."
+  type        = string
+  default     = null
 }
 
 variable "ecr_repository_arns" {
@@ -164,6 +191,18 @@ variable "cloudfront_distribution_arns" {
   description = "CloudFront distribution ARNs GitHub Actions can invalidate. Defaults to all distributions until CloudFront is added."
   type        = list(string)
   default     = []
+}
+
+variable "cloudfront_distribution_arn" {
+  description = "CloudFront distribution ARN the frontend GitHub Actions deploy role can invalidate."
+  type        = string
+  default     = null
+}
+
+variable "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID for the frontend site. Use this as the GitHub Actions CLOUDFRONT_DISTRIBUTION_ID variable."
+  type        = string
+  default     = null
 }
 
 variable "jwt_secret_name" {

@@ -15,6 +15,7 @@ The dev stack provisions:
 - An internet gateway and NAT gateway for outbound access from private app subnets
 - An S3 bucket configured for static frontend website hosting
 - An ECR repository for the backend API container image
+- An AWS monthly cost budget with email notifications
 - An ECS Fargate service behind an Application Load Balancer
 - A private, encrypted PostgreSQL RDS instance
 - Secrets Manager secrets for the database password and backend JWT secret
@@ -42,8 +43,10 @@ The database is not publicly accessible. Its security group only allows PostgreS
 |   +-- dev/                 # Dev environment composition
 +-- modules/
 |   +-- compute/             # ECS Fargate, ALB, target group, logs, service SGs
+|   +-- budget/              # AWS monthly cost budget and email notifications
 |   +-- database/            # RDS PostgreSQL and database security group
 |   +-- ecr/                 # Backend API image repository and lifecycle policy
+|   +-- github-oidc-deploy-role/ # GitHub Actions OIDC deploy role for frontend releases
 |   +-- networking/          # VPC, subnets, routes, IGW, NAT, DB subnet group
 |   +-- security/            # IAM, GitHub OIDC, Secrets Manager, SSM parameters
 |   +-- storage/             # Frontend S3 website bucket
@@ -84,6 +87,16 @@ Creates the backend API container repository:
 - Optional image scan on push
 - Lifecycle rules for untagged and tagged image retention
 
+### Budget
+
+Creates the monthly AWS cost budget:
+
+- Monthly cost budget named from the environment, such as `direct-ride-dev-budget`
+- Budget limit: `$20 USD`
+- Actual spend email notifications at 50% and 100%
+
+The notification email is provided by the dev environment through `notification_email`; it is intentionally not hardcoded.
+
 ### Database
 
 Creates a private PostgreSQL RDS instance:
@@ -109,6 +122,18 @@ Creates application and deployment security resources:
 
 The GitHub Actions role is only created when `github_repository` is set.
 
+### GitHub OIDC Deploy Role
+
+Creates a least-privilege GitHub Actions deployment role for the frontend repository:
+
+- GitHub Actions OIDC provider for `https://token.actions.githubusercontent.com`
+- IAM role named from the environment, such as `direct-ride-dev-frontend-deploy-role`
+- Trust restricted to `repo:<github_org>/<github_repo>:ref:refs/heads/<github_branch>`
+- S3 permissions for the frontend website bucket
+- CloudFront invalidation permission for the frontend distribution
+
+The role uses OIDC only. Do not create long-lived AWS access keys for GitHub Actions.
+
 ### Compute
 
 Creates the backend runtime:
@@ -131,6 +156,7 @@ The task receives database connection values as environment variables and reads 
 - Random provider `~> 3.0`
 - AWS credentials configured locally or in CI
 - Permissions to create VPC, ECS, ECR, RDS, S3, IAM, Secrets Manager, SSM, CloudWatch, and load balancing resources
+- Permissions to create and manage AWS Budgets and budget notifications
 
 ## Working With Dev
 
@@ -171,10 +197,14 @@ The dev environment includes sensible defaults for local development:
 - `backend_api_task_cpu`: defaults to `256`
 - `backend_api_task_memory`: defaults to `512`
 - `backend_api_health_check_path`: defaults to `/health`
+- `notification_email`: required email address for AWS Budget notifications
 
 Optional integrations:
 
 - Set `github_repository` to `owner/repo` to create the GitHub Actions OIDC deploy role.
+- Set `github_org`, `github_repo`, and `github_branch` to restrict the frontend deploy role to the frontend repository branch.
+- Set `frontend_github_oidc_provider_arn` if this AWS account already has a GitHub Actions OIDC provider managed elsewhere.
+- Set `cloudfront_distribution_arn` and `cloudfront_distribution_id` only when a frontend CloudFront distribution exists and GitHub Actions should invalidate it.
 - Set `github_branch` to control which branch can assume that role. It defaults to `main`.
 - Set `app_config_parameters` to create non-secret backend API config in SSM Parameter Store.
 - Set `uploads_bucket_arn` to allow the backend task role to read and write uploads.
@@ -191,6 +221,7 @@ Important outputs include:
 - Backend API ECS cluster, service, task definition, ALB DNS name, and ALB URL
 - ECS task execution and application role ARNs
 - JWT secret ARN and name
+- Frontend GitHub Actions deploy role ARN and name
 - GitHub Actions OIDC provider and deploy role ARNs, when enabled
 
 ## Deployment Notes
@@ -198,6 +229,8 @@ Important outputs include:
 The backend API image is expected to exist in ECR before the ECS service can run successfully. The container image URI is built from the managed ECR repository URL and `backend_api_image_tag`.
 
 The frontend bucket is configured for direct S3 website hosting. The security module already includes optional CloudFront invalidation permissions for GitHub Actions, but this Terraform stack does not currently create a CloudFront distribution.
+
+For frontend deployments, store `frontend_deploy_role_arn` from `terraform output` in GitHub as `AWS_DEPLOY_ROLE_ARN`. A repository secret is recommended, though a repository variable is also acceptable because role assumption is still restricted by the IAM trust policy. Also configure `AWS_REGION`, `S3_BUCKET`, and `VITE_API_BASE_URL` in the frontend repository's GitHub Actions variables. Configure `CLOUDFRONT_DISTRIBUTION_ID` only if a frontend CloudFront distribution exists.
 
 The ALB currently exposes an HTTP listener on port `80`. Security group ingress for HTTPS is present, but the compute module does not yet create an HTTPS listener or attach an ACM certificate.
 
