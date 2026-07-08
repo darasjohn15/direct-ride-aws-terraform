@@ -118,17 +118,28 @@ Creates application and deployment security resources:
 - SSM Parameter Store app config values
 - Optional permissions for an uploads bucket
 - Optional SES send permissions
-- Optional GitHub Actions OIDC provider and deploy role
+- Optional GitHub Actions OIDC provider and backend deploy role
 
-The GitHub Actions role is only created when `github_repository` is set.
+The backend GitHub Actions role is only created when `backend_github_repository` is set.
 
-### GitHub OIDC Deploy Role
+### GitHub OIDC Deploy Roles
+
+Creates a least-privilege GitHub Actions deployment role for the backend API repository:
+
+- GitHub Actions OIDC provider for `https://token.actions.githubusercontent.com`
+- IAM role named from the environment, such as `direct-ride-dev-github-actions-deploy-role`
+- Trust restricted to `repo:<backend_github_repository>:ref:refs/heads/<github_branch>`
+- ECR permissions for pushing backend images
+- ECS permissions for updating the backend API service and registering task definitions
+- IAM PassRole permissions for the backend ECS task roles
+
+The backend role uses OIDC only. Do not create long-lived AWS access keys for GitHub Actions.
 
 Creates a least-privilege GitHub Actions deployment role for the frontend repository:
 
 - GitHub Actions OIDC provider for `https://token.actions.githubusercontent.com`
 - IAM role named from the environment, such as `direct-ride-dev-frontend-deploy-role`
-- Trust restricted to `repo:<github_org>/<github_repo>:ref:refs/heads/<github_branch>`
+- Trust restricted to `repo:<frontend_github_repository>:ref:refs/heads/<github_branch>`
 - S3 permissions for the frontend website bucket
 - CloudFront invalidation permission for the frontend distribution
 
@@ -201,8 +212,10 @@ The dev environment includes sensible defaults for local development:
 
 Optional integrations:
 
-- Set `github_repository` to `owner/repo` to create the GitHub Actions OIDC deploy role.
-- Set `github_org`, `github_repo`, and `github_branch` to restrict the frontend deploy role to the frontend repository branch.
+- Set `github_repository` to `owner/repo` for Terraform deployment repository configuration.
+- Set `backend_github_repository` to `owner/repo` to create and restrict the backend deploy role to the backend API repository.
+- Set `frontend_github_repository` to `owner/repo` to restrict the frontend deploy role to the frontend repository.
+- Alternatively, set `github_org`, `github_repo`, and `github_branch` to restrict the frontend deploy role to the frontend repository branch.
 - Set `frontend_github_oidc_provider_arn` if this AWS account already has a GitHub Actions OIDC provider managed elsewhere.
 - Set `cloudfront_distribution_arn` and `cloudfront_distribution_id` only when a frontend CloudFront distribution exists and GitHub Actions should invalidate it.
 - Set `github_branch` to control which branch can assume that role. It defaults to `main`.
@@ -221,6 +234,7 @@ Important outputs include:
 - Backend API ECS cluster, service, task definition, ALB DNS name, and ALB URL
 - ECS task execution and application role ARNs
 - JWT secret ARN and name
+- Backend GitHub Actions deploy role ARN and name
 - Frontend GitHub Actions deploy role ARN and name
 - GitHub Actions OIDC provider and deploy role ARNs, when enabled
 
@@ -228,9 +242,11 @@ Important outputs include:
 
 The backend API image is expected to exist in ECR before the ECS service can run successfully. The container image URI is built from the managed ECR repository URL and `backend_api_image_tag`.
 
-The frontend bucket is configured for direct S3 website hosting. The security module already includes optional CloudFront invalidation permissions for GitHub Actions, but this Terraform stack does not currently create a CloudFront distribution.
+The frontend bucket is configured for direct S3 website hosting. The frontend deploy role includes optional CloudFront invalidation permissions, but this Terraform stack does not currently create a CloudFront distribution.
 
 For frontend deployments, store `frontend_deploy_role_arn` from `terraform output` in GitHub as `AWS_DEPLOY_ROLE_ARN`. A repository secret is recommended, though a repository variable is also acceptable because role assumption is still restricted by the IAM trust policy. Also configure `AWS_REGION`, `S3_BUCKET`, and `VITE_API_BASE_URL` in the frontend repository's GitHub Actions variables. Configure `CLOUDFRONT_DISTRIBUTION_ID` only if a frontend CloudFront distribution exists.
+
+For backend deployments, store `backend_deploy_role_arn` from `terraform output` in GitHub as `AWS_DEPLOY_ROLE_ARN`. Configure `AWS_REGION`, the managed ECR repository URL, ECS cluster name, ECS service name, and task definition family in the backend API repository's GitHub Actions variables.
 
 The ALB currently exposes an HTTP listener on port `80`. Security group ingress for HTTPS is present, but the compute module does not yet create an HTTPS listener or attach an ACM certificate.
 

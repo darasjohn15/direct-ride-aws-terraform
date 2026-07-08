@@ -159,6 +159,18 @@ variable "github_repository" {
   default     = null
 }
 
+variable "backend_github_repository" {
+  description = "GitHub repository allowed to assume the backend deploy role, in owner/name format."
+  type        = string
+  default     = null
+}
+
+variable "frontend_github_repository" {
+  description = "GitHub repository allowed to assume the frontend deploy role, in owner/name format."
+  type        = string
+  default     = null
+}
+
 variable "github_org" {
   description = "GitHub organization or username that owns the frontend repository."
   type        = string

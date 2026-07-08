@@ -25,7 +25,6 @@ locals {
   application_secret_arns    = concat(var.application_secret_arns, [aws_secretsmanager_secret.jwt.arn])
 
   ecr_repository_resources = length(var.ecr_repository_arns) > 0 ? var.ecr_repository_arns : ["*"]
-  cloudfront_resources     = length(var.cloudfront_distribution_arns) > 0 ? var.cloudfront_distribution_arns : ["*"]
   ses_resources            = ["arn:aws:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:identity/*"]
   create_application_policy = (
     length(local.application_secret_arns) > 0 ||
@@ -145,33 +144,6 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     }
   }
 
-  statement {
-    sid = "UploadFrontendFiles"
-
-    actions = [
-      "s3:DeleteObject",
-      "s3:GetObject",
-      "s3:ListBucket",
-      "s3:PutObject",
-    ]
-
-    resources = [
-      var.frontend_website_bucket_arn,
-      "${var.frontend_website_bucket_arn}/*",
-    ]
-  }
-
-  statement {
-    sid = "InvalidateCloudFrontCache"
-
-    actions = [
-      "cloudfront:CreateInvalidation",
-      "cloudfront:GetDistribution",
-      "cloudfront:GetInvalidation",
-    ]
-
-    resources = local.cloudfront_resources
-  }
 }
 
 data "aws_iam_policy_document" "ecs_task_assume_role" {

@@ -8,14 +8,22 @@ variable "role_name" {
   type        = string
 }
 
+variable "github_repository" {
+  description = "GitHub repository allowed to assume this role, in owner/name format."
+  type        = string
+  default     = null
+}
+
 variable "github_org" {
   description = "GitHub organization or username that owns the repository."
   type        = string
+  default     = null
 }
 
 variable "github_repo" {
   description = "GitHub repository name allowed to assume this role."
   type        = string
+  default     = null
 }
 
 variable "github_branch" {
@@ -25,9 +33,15 @@ variable "github_branch" {
 }
 
 variable "github_oidc_provider_arn" {
-  description = "Existing GitHub Actions OIDC provider ARN to reuse. Leave null to create the provider in this module."
+  description = "Existing GitHub Actions OIDC provider ARN to reuse when create_github_oidc_provider is false."
   type        = string
   default     = null
+}
+
+variable "create_github_oidc_provider" {
+  description = "Whether this module should create a GitHub Actions OIDC provider instead of reusing one."
+  type        = bool
+  default     = true
 }
 
 variable "github_oidc_thumbprints" {

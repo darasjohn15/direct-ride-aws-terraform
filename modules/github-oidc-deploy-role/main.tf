@@ -1,7 +1,11 @@
 locals {
   github_oidc_url  = "https://token.actions.githubusercontent.com"
   github_oidc_host = "token.actions.githubusercontent.com"
-  github_sub       = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${var.github_branch}"
+  github_repository = try(coalesce(
+    var.github_repository,
+    var.github_org == null || var.github_repo == null ? null : "${var.github_org}/${var.github_repo}"
+  ), null)
+  github_sub = "repo:${coalesce(local.github_repository, "")}:ref:refs/heads/${var.github_branch}"
 
   oidc_provider_arn = coalesce(
     var.github_oidc_provider_arn,
@@ -10,7 +14,7 @@ locals {
 }
 
 resource "aws_iam_openid_connect_provider" "github_actions" {
-  count = var.github_oidc_provider_arn == null ? 1 : 0
+  count = var.create_github_oidc_provider ? 1 : 0
 
   url             = local.github_oidc_url
   client_id_list  = ["sts.amazonaws.com"]
@@ -47,6 +51,18 @@ data "aws_iam_policy_document" "assume_role" {
 resource "aws_iam_role" "this" {
   name               = var.role_name
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
+
+  lifecycle {
+    precondition {
+      condition     = local.github_repository != null
+      error_message = "Set github_repository or both github_org and github_repo."
+    }
+
+    precondition {
+      condition     = local.oidc_provider_arn != null
+      error_message = "Set github_oidc_provider_arn or create_github_oidc_provider = true."
+    }
+  }
 
   tags = merge(var.tags, {
     Name = var.role_name

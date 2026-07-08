@@ -96,11 +96,17 @@ module "frontend_github_oidc_deploy_role" {
   name_prefix = local.name_prefix
   role_name   = "${local.name_prefix}-frontend-deploy-role"
 
-  github_org    = var.github_org
-  github_repo   = var.github_repo
-  github_branch = var.github_branch
+  github_repository = var.frontend_github_repository
+  github_org        = var.github_org
+  github_repo       = var.github_repo
+  github_branch     = var.github_branch
 
-  github_oidc_provider_arn = var.frontend_github_oidc_provider_arn
+  create_github_oidc_provider = var.frontend_github_oidc_provider_arn == null && var.backend_github_repository == null
+  github_oidc_provider_arn = (
+    var.frontend_github_oidc_provider_arn != null ? var.frontend_github_oidc_provider_arn :
+    var.backend_github_repository != null ? module.security.github_actions_oidc_provider_arn :
+    null
+  )
 
   frontend_bucket_arn         = module.storage.frontend_website_bucket_arn
   cloudfront_distribution_arn = var.cloudfront_distribution_arn
@@ -122,7 +128,7 @@ module "security" {
   source = "../../modules/security"
 
   name_prefix       = local.name_prefix
-  github_repository = var.github_repository
+  github_repository = var.backend_github_repository
   github_branch     = var.github_branch
 
   ecr_repository_arns          = concat([module.ecr.repository_arn], var.ecr_repository_arns)

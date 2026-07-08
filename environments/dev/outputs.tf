@@ -169,8 +169,18 @@ output "github_actions_oidc_provider_arn" {
 }
 
 output "github_actions_deploy_role_arn" {
-  description = "ARN of the dev GitHub Actions deploy role, when enabled."
+  description = "ARN of the dev backend GitHub Actions deploy role, when enabled."
   value       = module.security.github_actions_deploy_role_arn
+}
+
+output "backend_deploy_role_arn" {
+  description = "ARN of the dev backend GitHub Actions deploy role, when enabled."
+  value       = module.security.github_actions_deploy_role_arn
+}
+
+output "backend_deploy_role_name" {
+  description = "Name of the dev backend GitHub Actions deploy role, when enabled."
+  value       = module.security.github_actions_deploy_role_name
 }
 
 output "frontend_deploy_role_arn" {
