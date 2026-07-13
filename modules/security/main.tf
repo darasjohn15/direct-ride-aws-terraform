@@ -67,9 +67,11 @@ data "aws_iam_policy_document" "github_actions_deploy" {
 
     actions = [
       "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
       "ecr:CompleteLayerUpload",
       "ecr:DescribeImages",
       "ecr:DescribeRepositories",
+      "ecr:GetDownloadUrlForLayer",
       "ecr:InitiateLayerUpload",
       "ecr:ListImages",
       "ecr:PutImage",
@@ -105,7 +107,6 @@ data "aws_iam_policy_document" "github_actions_deploy" {
 
     actions = [
       "ecs:DescribeClusters",
-      "ecs:DescribeTaskDefinition",
       "ecs:ListTasks",
     ]
 
@@ -113,6 +114,16 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       local.ecs_cluster_arn,
       local.ecs_task_definition_arn_all,
     ]
+  }
+
+  statement {
+    sid = "DescribeEcsTaskDefinitions"
+
+    actions = [
+      "ecs:DescribeTaskDefinition",
+    ]
+
+    resources = ["*"]
   }
 
   statement {
