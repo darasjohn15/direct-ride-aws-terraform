@@ -1,271 +1,145 @@
 # Direct Ride Terraform
 
-Terraform infrastructure for the Direct Ride application. This repository defines the AWS resources needed to run the dev environment for a containerized backend API, a static frontend website, and a managed PostgreSQL database.
+## Project Overview
 
-The infrastructure is split into reusable modules under `modules/` and composed by the dev environment in `environments/dev/`.
+DirectRide Infrastructure contains the Infrastructure as Code (IaC) for the DirectRide platform. This repository provisions the AWS infrastructure required to host the frontend, backend API, networking, database, security resources, and CI/CD integrations.
 
-## What This Deploys
+The infrastructure is written in Terraform using reusable modules to promote consistency, maintainability, and scalability across environments.
 
-The dev stack provisions:
+This repository demonstrates cloud engineering best practices including Infrastructure as Code, least-privilege IAM, secure secret management, modular Terraform architecture, and production-inspired AWS networking.
 
-- A VPC across two Availability Zones in `us-east-1`
-- Public subnets for internet-facing load balancing
-- Private application subnets for ECS Fargate tasks
-- Private database subnets for RDS PostgreSQL
-- An internet gateway and NAT gateway for outbound access from private app subnets
-- An S3 bucket configured for static frontend website hosting
-- An ECR repository for the backend API container image
-- An AWS monthly cost budget with email notifications
-- An ECS Fargate service behind an Application Load Balancer
-- A private, encrypted PostgreSQL RDS instance
-- Secrets Manager secrets for the database password and backend JWT secret
-- SSM Parameter Store entries for non-secret backend configuration
-- IAM roles for ECS task execution, application permissions, and optional GitHub Actions deployment
+## Architecture Diagram
 
-## Architecture
+![DirectRide AWS Architecture Diagram](docs/cloud-infrastructure-diagram.png)
 
-At a high level, the application traffic flow is:
+## Tech Stack
 
-1. Users reach the static frontend through the S3 website endpoint.
-2. API traffic reaches the public Application Load Balancer.
-3. The load balancer forwards requests to ECS Fargate tasks running in private app subnets.
-4. ECS tasks connect to PostgreSQL in private database subnets.
-5. ECS tasks read secrets from Secrets Manager and app config from SSM Parameter Store.
-6. GitHub Actions can optionally assume an AWS deploy role through OIDC to push images, update ECS, upload frontend files, and invalidate CloudFront distributions when those are configured.
+| Category       | Technology                            |
+| -------------- | ------------------------------------- |
+| IaC            | Terraform                             |
+| Cloud Provider | AWS                                   |
+| Containers     | Amazon ECS Fargate                    |
+| Networking     | VPC, ALB, NAT Gateway                 |
+| Database       | Amazon RDS PostgreSQL                 |
+| Storage        | Amazon S3                             |
+| Security       | IAM, Secrets Manager, Parameter Store |
+| Registry       | Amazon ECR                            |
+| Monitoring     | CloudWatch                            |
+| CI/CD          | GitHub Actions + OIDC                 |
 
-The database is not publicly accessible. Its security group only allows PostgreSQL traffic from the ECS task security group.
+## Why This Tech Stack
 
-## Repository Layout
+| Technology      | Why I Chose It                                                                    |
+| --------------- | --------------------------------------------------------------------------------- |
+| Terraform       | Declarative Infrastructure as Code with reusable modules and state management.    |
+| AWS             | Broad managed service ecosystem for scalable, production-inspired cloud infrastructure. |
+| ECS Fargate     | Container orchestration without managing EC2 instances.                           |
+| VPC             | Isolated networking foundation with controlled public, private app, and database subnets. |
+| ALB             | Managed layer 7 load balancing for routing external API traffic to ECS services.  |
+| NAT Gateway     | Enables private application workloads to reach the internet without public exposure. |
+| RDS PostgreSQL  | Managed relational database with automated backups and high availability options. |
+| IAM             | Fine-grained access control for least-privilege service and deployment permissions. |
+| Secrets Manager | Secure storage and rotation of sensitive application secrets.                     |
+| Parameter Store | Centralized storage for non-sensitive application configuration.                  |
+| ECR             | Managed container registry integrated with ECS deployments.                       |
+| CloudWatch      | Centralized logging and monitoring for infrastructure and application workloads.  |
+| GitHub OIDC     | Eliminates long-lived AWS access keys by using short-lived identity federation.   |
+| S3              | Durable, low-cost static website hosting.                                         |
+
+## Engineering Decisions
+
+### Modular Terraform Design
+
+Infrastructure is organized into reusable modules so networking, compute, security, and storage can evolve independently and be reused across environments.
+
+### Multi-AZ Networking
+
+The VPC spans two Availability Zones to improve availability while maintaining isolated public, application, and database subnets.
+
+### Least-Privilege IAM
+
+IAM roles grant only the permissions required by ECS tasks and deployment pipelines, following AWS security best practices.
+
+### Secrets Management
+
+Application secrets are stored in AWS Secrets Manager while non-sensitive configuration lives in Systems Manager Parameter Store.
+
+### GitHub OIDC Authentication
+
+CI/CD pipelines authenticate to AWS using OpenID Connect instead of long-lived IAM access keys.
+
+### Containerized Compute
+
+The backend is deployed on ECS Fargate, eliminating the need to manage EC2 instances while allowing the application to scale independently.
+
+### Infrastructure as Code
+
+Every cloud resource required for DirectRide can be recreated consistently through version-controlled Terraform code.
+
+## Features
+
+### Networking
+
+- VPC
+- Public/private/database subnets
+- Internet Gateway
+- NAT Gateway
+- Route tables
+
+### Compute
+
+- ECS Cluster
+- Fargate Service
+- Application Load Balancer
+- CloudWatch Logs
+
+### Data
+
+- PostgreSQL RDS
+- Secrets Manager
+- Systems Manager Parameter Store
+
+### Storage
+
+- Static website S3 bucket
+- Container images in ECR
+
+### Security
+
+- IAM roles
+- Security Groups
+- OIDC authentication
+- Encrypted resources
+
+### Automation
+
+- GitHub Actions deployment roles
+- Terraform modules
+- AWS Budgets
+
+## Project Structure
 
 ```text
 .
 +-- environments/
 |   +-- dev/                 # Dev environment composition
 +-- modules/
-|   +-- compute/             # ECS Fargate, ALB, target group, logs, service SGs
 |   +-- budget/              # AWS monthly cost budget and email notifications
+|   +-- compute/             # ECS Fargate, ALB, target group, logs, service SGs
 |   +-- database/            # RDS PostgreSQL and database security group
 |   +-- ecr/                 # Backend API image repository and lifecycle policy
 |   +-- github-oidc-deploy-role/ # GitHub Actions OIDC deploy role for frontend releases
+|   +-- monitoring/          # Monitoring module placeholder
 |   +-- networking/          # VPC, subnets, routes, IGW, NAT, DB subnet group
 |   +-- security/            # IAM, GitHub OIDC, Secrets Manager, SSM parameters
 |   +-- storage/             # Frontend S3 website bucket
 +-- docs/
     +-- architecture-notes.md
+    +-- cloud-infrastructure-diagram.png
 ```
 
-## Modules
+## Roadmap
 
-### Networking
+Upcoming features planned for future versions of DirectRide's Cloud Infrastructure include:
 
-Creates the network foundation:
-
-- VPC CIDR: `10.0.0.0/16`
-- Public subnets: `10.0.1.0/24`, `10.0.2.0/24`
-- Private app subnets: `10.0.11.0/24`, `10.0.12.0/24`
-- Private database subnets: `10.0.21.0/24`, `10.0.22.0/24`
-- Internet gateway for public subnets
-- NAT gateway for outbound traffic from private app subnets
-- Isolated route table for private database subnets
-- RDS DB subnet group
-
-### Storage
-
-Creates the frontend website bucket:
-
-- S3 static website configuration
-- Bucket owner enforced object ownership
-- Server-side encryption with AES256
-- Versioning enabled
-- Public read bucket policy for website objects
-
-### ECR
-
-Creates the backend API container repository:
-
-- AES256 repository encryption
-- Optional image scan on push
-- Lifecycle rules for untagged and tagged image retention
-
-### Budget
-
-Creates the monthly AWS cost budget:
-
-- Monthly cost budget named from the environment, such as `direct-ride-dev-budget`
-- Budget limit: `$20 USD`
-- Actual spend email notifications at 50% and 100%
-
-The notification email is provided by the dev environment through `notification_email`; it is intentionally not hardcoded.
-
-### Database
-
-Creates a private PostgreSQL RDS instance:
-
-- PostgreSQL engine
-- Encrypted `gp3` storage
-- AWS-managed master password in Secrets Manager
-- Private database subnet placement
-- No public accessibility
-- Configurable instance class, storage, backups, deletion protection, and final snapshot behavior
-
-### Security
-
-Creates application and deployment security resources:
-
-- ECS task execution role
-- ECS application task role
-- JWT secret in Secrets Manager
-- SSM Parameter Store app config values
-- Optional permissions for an uploads bucket
-- Optional SES send permissions
-- Optional GitHub Actions OIDC provider and backend deploy role
-
-The backend GitHub Actions role is only created when `backend_github_repository` is set.
-
-### GitHub OIDC Deploy Roles
-
-Creates a least-privilege GitHub Actions deployment role for the backend API repository:
-
-- GitHub Actions OIDC provider for `https://token.actions.githubusercontent.com`
-- IAM role named from the environment, such as `direct-ride-dev-github-actions-deploy-role`
-- Trust restricted to `repo:<backend_github_repository>:ref:refs/heads/<github_branch>`
-- ECR permissions for pushing backend images
-- ECS permissions for updating the backend API service and registering task definitions
-- IAM PassRole permissions for the backend ECS task roles
-
-The backend role uses OIDC only. Do not create long-lived AWS access keys for GitHub Actions.
-
-Creates a least-privilege GitHub Actions deployment role for the frontend repository:
-
-- GitHub Actions OIDC provider for `https://token.actions.githubusercontent.com`
-- IAM role named from the environment, such as `direct-ride-dev-frontend-deploy-role`
-- Trust restricted to `repo:<frontend_github_repository>:ref:refs/heads/<github_branch>`
-- S3 permissions for the frontend website bucket
-- CloudFront invalidation permission for the frontend distribution
-
-The role uses OIDC only. Do not create long-lived AWS access keys for GitHub Actions.
-
-### Compute
-
-Creates the backend runtime:
-
-- ECS cluster with Container Insights enabled
-- CloudWatch log group
-- Fargate task definition
-- ECS service in private app subnets
-- Public Application Load Balancer
-- HTTP listener on port `80`
-- Target group health checks
-- Security groups for ALB-to-ECS traffic
-
-The task receives database connection values as environment variables and reads sensitive values from Secrets Manager.
-
-## Prerequisites
-
-- Terraform `>= 1.5.0`
-- AWS provider `~> 5.0`
-- Random provider `~> 3.0`
-- AWS credentials configured locally or in CI
-- Permissions to create VPC, ECS, ECR, RDS, S3, IAM, Secrets Manager, SSM, CloudWatch, and load balancing resources
-- Permissions to create and manage AWS Budgets and budget notifications
-
-## Working With Dev
-
-From the dev environment directory:
-
-```sh
-cd environments/dev
-terraform init
-terraform plan
-terraform apply
-```
-
-To inspect outputs after deployment:
-
-```sh
-terraform output
-```
-
-To destroy the dev stack:
-
-```sh
-terraform destroy
-```
-
-Review database settings before destroying. The dev defaults set `db_skip_final_snapshot = true` and `db_deletion_protection = false`, which makes teardown easier but is not appropriate for production data.
-
-## Key Dev Variables
-
-The dev environment includes sensible defaults for local development:
-
-- `aws_region`: defaults to `us-east-1`
-- `project_name`: defaults to `direct-ride`
-- `environment`: defaults to `dev`
-- `db_instance_class`: defaults to `db.t4g.micro`
-- `backend_api_image_tag`: defaults to `latest`
-- `backend_api_container_port`: defaults to `8080`
-- `backend_api_desired_count`: defaults to `1`
-- `backend_api_task_cpu`: defaults to `256`
-- `backend_api_task_memory`: defaults to `512`
-- `backend_api_health_check_path`: defaults to `/health`
-- `notification_email`: required email address for AWS Budget notifications
-
-Optional integrations:
-
-- Set `github_repository` to `owner/repo` for Terraform deployment repository configuration.
-- Set `backend_github_repository` to `owner/repo` to create and restrict the backend deploy role to the backend API repository.
-- Set `frontend_github_repository` to `owner/repo` to restrict the frontend deploy role to the frontend repository.
-- Alternatively, set `github_org`, `github_repo`, and `github_branch` to restrict the frontend deploy role to the frontend repository branch.
-- Set `frontend_github_oidc_provider_arn` if this AWS account already has a GitHub Actions OIDC provider managed elsewhere.
-- Set `cloudfront_distribution_arn` and `cloudfront_distribution_id` only when a frontend CloudFront distribution exists and GitHub Actions should invalidate it.
-- Set `github_branch` to control which branch can assume that role. It defaults to `main`.
-- Set `app_config_parameters` to create non-secret backend API config in SSM Parameter Store.
-- Set `uploads_bucket_arn` to allow the backend task role to read and write uploads.
-- Set `enable_ses_permissions = true` to allow the backend task role to send email through SES.
-
-## Outputs
-
-Important outputs include:
-
-- VPC and subnet IDs
-- Frontend S3 website bucket name, ARN, endpoint, and URL
-- RDS endpoint, address, port, database name, username, and master secret ARN
-- Backend API ECR repository name, ARN, and URL
-- Backend API ECS cluster, service, task definition, ALB DNS name, and ALB URL
-- ECS task execution and application role ARNs
-- JWT secret ARN and name
-- Backend GitHub Actions deploy role ARN and name
-- Frontend GitHub Actions deploy role ARN and name
-- GitHub Actions OIDC provider and deploy role ARNs, when enabled
-
-## Deployment Notes
-
-The backend API image is expected to exist in ECR before the ECS service can run successfully. The container image URI is built from the managed ECR repository URL and `backend_api_image_tag`.
-
-The frontend bucket is configured for direct S3 website hosting. The frontend deploy role includes optional CloudFront invalidation permissions, but this Terraform stack does not currently create a CloudFront distribution.
-
-For frontend deployments, store `frontend_deploy_role_arn` from `terraform output` in GitHub as `AWS_DEPLOY_ROLE_ARN`. A repository secret is recommended, though a repository variable is also acceptable because role assumption is still restricted by the IAM trust policy. Also configure `AWS_REGION`, `S3_BUCKET`, and `VITE_API_BASE_URL` in the frontend repository's GitHub Actions variables. Configure `CLOUDFRONT_DISTRIBUTION_ID` only if a frontend CloudFront distribution exists.
-
-For backend deployments, store `backend_deploy_role_arn` from `terraform output` in GitHub as `AWS_DEPLOY_ROLE_ARN`. Configure `AWS_REGION`, the managed ECR repository URL, ECS cluster name, ECS service name, and task definition family in the backend API repository's GitHub Actions variables.
-
-The ALB currently exposes an HTTP listener on port `80`. Security group ingress for HTTPS is present, but the compute module does not yet create an HTTPS listener or attach an ACM certificate.
-
-## Naming and Tags
-
-Resources use a shared name prefix:
-
-```text
-<project_name>-<environment>
-```
-
-For the default dev environment, resources are prefixed with:
-
-```text
-direct-ride-dev
-```
-
-The AWS provider also applies default tags:
-
-- `Project`
-- `Environment`
-- `ManagedBy = Terraform`
+Future roadmap items have not been defined yet.
