@@ -10,7 +10,7 @@ This repository demonstrates cloud engineering best practices including Infrastr
 
 ## Architecture Diagram
 
-![DirectRide AWS Architecture Diagram](docs/cloud-infrastructure-diagram.png)
+![DirectRide AWS Architecture Diagram](docs/DirectRide_AWS_Diagram.png)
 
 ## Tech Stack
 
