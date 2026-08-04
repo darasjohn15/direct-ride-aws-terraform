@@ -18,13 +18,14 @@ This directory documents the Direct Ride development AWS infrastructure managed 
 
 ## Request Flow
 
-1. A user accesses the React frontend through the S3 website endpoint.
-2. The frontend sends an API request to the Application Load Balancer.
-3. The ALB forwards the request to an ECS Fargate task in the private app subnets.
-4. The API receives plain database connection settings from ECS environment variables.
-5. The API receives sensitive values from ECS secrets backed by AWS Secrets Manager.
-6. The API connects to the PostgreSQL RDS database in the private database subnets.
-7. The response travels back through the ALB to the frontend.
+1. A user accesses the React frontend through CloudFront.
+2. AWS WAF evaluates the frontend request at the CloudFront edge.
+3. The frontend sends an API request to the Application Load Balancer.
+4. The ALB forwards the request to an ECS Fargate task in the private app subnets.
+5. The API receives plain database connection settings from ECS environment variables.
+6. The API receives sensitive values from ECS secrets backed by AWS Secrets Manager.
+7. The API connects to the PostgreSQL RDS database in the private database subnets.
+8. The response travels back through the ALB to the frontend.
 
 ---
 
@@ -52,7 +53,7 @@ Describes the ECS cluster, ECS service, Fargate task definition, Application Loa
 
 ### [Storage](storage.md)
 
-Documents the frontend S3 website bucket, public website access model, ownership controls, encryption, versioning, website configuration, and storage outputs.
+Documents the frontend S3 website bucket, CloudFront distribution, WAF web ACL, public website access model, ownership controls, encryption, versioning, website configuration, and storage outputs.
 
 ### [Database](database.md)
 

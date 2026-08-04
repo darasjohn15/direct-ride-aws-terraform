@@ -21,6 +21,12 @@ variable "website_error_document" {
   default     = "index.html"
 }
 
+variable "cloudfront_price_class" {
+  description = "CloudFront price class for the frontend website distribution."
+  type        = string
+  default     = "PriceClass_100"
+}
+
 variable "tags" {
   description = "Tags applied to all storage resources."
   type        = map(string)

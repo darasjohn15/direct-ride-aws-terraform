@@ -103,4 +103,4 @@ The DirectRide infrastructure uses dedicated IAM roles for application runtime, 
 
 - Read bucket location and list the frontend website bucket
 - Upload, read, and delete frontend website objects in S3
-- Optionally create CloudFront invalidations when `cloudfront_distribution_arn` is set
+- Create invalidations for the frontend CloudFront distribution

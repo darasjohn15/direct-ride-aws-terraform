@@ -21,8 +21,8 @@ This repository demonstrates cloud engineering best practices including Infrastr
 | Containers     | Amazon ECS Fargate                    |
 | Networking     | VPC, ALB, NAT Gateway                 |
 | Database       | Amazon RDS PostgreSQL                 |
-| Storage        | Amazon S3                             |
-| Security       | IAM, Secrets Manager, Parameter Store |
+| Storage/CDN     | Amazon S3, Amazon CloudFront          |
+| Security       | IAM, AWS WAF, Secrets Manager, Parameter Store |
 | Registry       | Amazon ECR                            |
 | Monitoring     | CloudWatch                            |
 | CI/CD          | GitHub Actions + OIDC                 |
@@ -39,12 +39,14 @@ This repository demonstrates cloud engineering best practices including Infrastr
 | NAT Gateway     | Enables private application workloads to reach the internet without public exposure. |
 | RDS PostgreSQL  | Managed relational database with automated backups and high availability options. |
 | IAM             | Fine-grained access control for least-privilege service and deployment permissions. |
+| AWS WAF         | Managed rule protections attached to the frontend CloudFront distribution.        |
 | Secrets Manager | Secure storage and rotation of sensitive application secrets.                     |
 | Parameter Store | Centralized storage for non-sensitive application configuration.                  |
 | ECR             | Managed container registry integrated with ECS deployments.                       |
 | CloudWatch      | Centralized logging and monitoring for infrastructure and application workloads.  |
 | GitHub OIDC     | Eliminates long-lived AWS access keys by using short-lived identity federation.   |
-| S3              | Durable, low-cost static website hosting.                                         |
+| S3              | Durable, low-cost static website storage.                                         |
+| CloudFront      | HTTPS edge delivery and caching in front of the frontend S3 website.              |
 
 ## Engineering Decisions
 
@@ -102,11 +104,13 @@ Every cloud resource required for DirectRide can be recreated consistently throu
 ### Storage
 
 - Static website S3 bucket
+- CloudFront distribution for frontend delivery
 - Container images in ECR
 
 ### Security
 
 - IAM roles
+- AWS WAF web ACL for frontend edge protection
 - Security Groups
 - OIDC authentication
 - Encrypted resources
@@ -132,7 +136,7 @@ Every cloud resource required for DirectRide can be recreated consistently throu
 |   +-- monitoring/          # Monitoring module placeholder
 |   +-- networking/          # VPC, subnets, routes, IGW, NAT, DB subnet group
 |   +-- security/            # IAM, GitHub OIDC, Secrets Manager, SSM parameters
-|   +-- storage/             # Frontend S3 website bucket
+|   +-- storage/             # Frontend S3 website bucket and CloudFront distribution
 +-- docs/
     +-- architecture-notes.md
     +-- cloud-infrastructure-diagram.png

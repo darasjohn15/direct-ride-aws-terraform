@@ -195,7 +195,32 @@ output "frontend_deploy_role_name" {
 
 output "frontend_cloudfront_distribution_id" {
   description = "CloudFront distribution ID for the dev frontend site."
-  value       = var.cloudfront_distribution_id
+  value       = module.storage.frontend_cloudfront_distribution_id
+}
+
+output "frontend_cloudfront_distribution_arn" {
+  description = "CloudFront distribution ARN for the dev frontend site."
+  value       = module.storage.frontend_cloudfront_distribution_arn
+}
+
+output "frontend_cloudfront_domain_name" {
+  description = "CloudFront domain name for the dev frontend site."
+  value       = module.storage.frontend_cloudfront_domain_name
+}
+
+output "frontend_cloudfront_url" {
+  description = "HTTPS URL for the dev frontend site served by CloudFront."
+  value       = module.storage.frontend_cloudfront_url
+}
+
+output "frontend_waf_web_acl_arn" {
+  description = "ARN of the WAF web ACL attached to the dev frontend CloudFront distribution."
+  value       = module.storage.frontend_waf_web_acl_arn
+}
+
+output "frontend_waf_web_acl_name" {
+  description = "Name of the WAF web ACL attached to the dev frontend CloudFront distribution."
+  value       = module.storage.frontend_waf_web_acl_name
 }
 
 output "backend_api_task_execution_role_arn" {

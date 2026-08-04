@@ -200,21 +200,9 @@ variable "ecr_repository_arns" {
 }
 
 variable "cloudfront_distribution_arns" {
-  description = "CloudFront distribution ARNs GitHub Actions can invalidate. Defaults to all distributions until CloudFront is added."
+  description = "Additional CloudFront distribution ARNs GitHub Actions can invalidate."
   type        = list(string)
   default     = []
-}
-
-variable "cloudfront_distribution_arn" {
-  description = "CloudFront distribution ARN the frontend GitHub Actions deploy role can invalidate."
-  type        = string
-  default     = null
-}
-
-variable "cloudfront_distribution_id" {
-  description = "CloudFront distribution ID for the frontend site. Use this as the GitHub Actions CLOUDFRONT_DISTRIBUTION_ID variable."
-  type        = string
-  default     = null
 }
 
 variable "jwt_secret_name" {

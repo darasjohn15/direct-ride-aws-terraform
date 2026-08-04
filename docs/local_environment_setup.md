@@ -119,8 +119,7 @@ Important optional variables:
 | `backend_github_repository` | `null` | Backend repo allowed to assume the backend GitHub Actions deploy role. |
 | `frontend_github_repository` | `null` | Frontend repo allowed to assume the frontend deploy role. |
 | `frontend_github_oidc_provider_arn` | `null` | Existing GitHub OIDC provider ARN to reuse for frontend deploy role. |
-| `cloudfront_distribution_arn` | `null` | CloudFront distribution ARN the frontend deploy role can invalidate. |
-| `cloudfront_distribution_id` | `null` | CloudFront distribution ID exposed as an output for frontend deploy workflows. |
+| `cloudfront_distribution_arns` | `[]` | Additional CloudFront distribution ARNs GitHub Actions can invalidate. |
 | `app_config_parameter_path_prefix` | `/<project>-<environment>/api/config` | SSM path prefix for non-secret backend API config. |
 | `app_config_parameters` | `{}` | Map of non-secret backend API config values to create in SSM. |
 | `uploads_bucket_arn` | `null` | Optional uploads bucket ARN the backend API can read and write. |
@@ -210,7 +209,9 @@ GitHub Actions workflows:
 
 ```sh
 terraform output frontend_website_bucket_id
-terraform output frontend_website_url
+terraform output frontend_cloudfront_url
+terraform output frontend_cloudfront_distribution_id
+terraform output frontend_waf_web_acl_name
 terraform output backend_api_ecr_repository_url
 terraform output backend_api_alb_url
 terraform output backend_deploy_role_arn
@@ -256,9 +257,9 @@ terraform output frontend_cloudfront_distribution_id
 ## Cost and Cleanup
 
 This environment creates billable resources, including NAT Gateway, ALB, ECS
-Fargate tasks, RDS PostgreSQL, ECR storage, S3 storage, CloudWatch logs, and AWS
-Budgets. The budget module defaults to a USD 20 monthly limit with notification
-emails at 50 percent and 100 percent usage.
+Fargate tasks, RDS PostgreSQL, ECR storage, S3 storage, CloudFront, AWS WAF,
+CloudWatch logs, and AWS Budgets. The budget module defaults to a USD 20 monthly
+limit with notification emails at 50 percent and 100 percent usage.
 
 To destroy the dev infrastructure:
 

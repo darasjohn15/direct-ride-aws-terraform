@@ -10,7 +10,8 @@ The repository currently defines a `dev` environment in `environments/dev`. It i
 - ECS Fargate for the backend API
 - Application Load Balancer for public API ingress
 - RDS PostgreSQL for application data
-- S3 website hosting for the frontend
+- S3 website hosting with CloudFront for the frontend
+- AWS WAF protections attached to the frontend CloudFront distribution
 - ECR for backend container images
 - Secrets Manager and SSM Parameter Store for runtime configuration
 - IAM roles for ECS and optional GitHub Actions deployment
@@ -22,8 +23,10 @@ The environment favors clear separation and low operational overhead over full p
 Frontend traffic:
 
 1. Static frontend files are uploaded to the S3 website bucket.
-2. Users access the frontend through the S3 website endpoint.
-3. The frontend calls the backend API through the backend Application Load Balancer URL.
+2. Users access the frontend through CloudFront over HTTPS.
+3. AWS WAF evaluates viewer requests before CloudFront serves cached content or reaches the origin.
+4. CloudFront retrieves static assets from the S3 website endpoint.
+5. The frontend calls the backend API through the backend Application Load Balancer URL.
 
 Backend API traffic:
 
@@ -35,7 +38,7 @@ Backend API traffic:
 Deployment traffic:
 
 1. A GitHub Actions workflow can assume the deploy role through GitHub OIDC when `github_repository` is configured.
-2. The deploy role can push backend images to ECR, register task definitions, update the ECS service, upload frontend files to S3, and invalidate CloudFront distributions when distribution ARNs are supplied.
+2. The deploy role can push backend images to ECR, register task definitions, update the ECS service, upload frontend files to S3, and invalidate the frontend CloudFront distribution.
 
 ## Networking Decisions
 
@@ -83,13 +86,11 @@ The default container image tag is `latest`. That is convenient for early develo
 
 ## Frontend Hosting Notes
 
-The frontend is currently hosted directly from an S3 website bucket. This keeps the setup simple, but it has some limitations:
+The frontend is stored in an S3 website bucket and served through CloudFront. The distribution redirects viewers to HTTPS, uses the CloudFront default certificate, enables compression, and maps `403` and `404` responses back to `index.html` for single-page app routing.
 
-- S3 website endpoints are HTTP-only.
-- The bucket policy allows public object reads.
-- There is no CDN, custom domain, TLS certificate, or edge caching resource in this Terraform stack yet.
+AWS WAF is attached to the CloudFront distribution with AWS managed common protections and known-bad-input protections. Because WAF web ACLs for CloudFront use the global CloudFront control plane, the Terraform module receives an explicit `us-east-1` provider alias for the web ACL.
 
-For production, CloudFront should sit in front of S3 with an ACM certificate and a tighter bucket access pattern.
+The CloudFront origin is the S3 website endpoint rather than the S3 REST endpoint. This preserves the current website hosting behavior, but it means the bucket policy still allows public object reads. For production, consider adding a custom domain, an ACM certificate, and a tighter bucket access pattern using an S3 REST origin with origin access control if the app no longer depends on S3 website endpoint behavior.
 
 ## API Ingress Notes
 
@@ -180,10 +181,10 @@ Before introducing a production environment, consider adding:
 
 - Separate `prod` environment composition
 - Remote Terraform state with locking
-- CloudFront distribution for the frontend
 - ACM certificates and custom domains
 - HTTPS listener and HTTP-to-HTTPS redirects for the API
 - Route 53 DNS records
+- WAF logging and alerting
 - One NAT gateway per Availability Zone
 - ECS service autoscaling
 - RDS deletion protection and stricter snapshot behavior

@@ -43,6 +43,11 @@ module "networking" {
 module "storage" {
   source = "../../modules/storage"
 
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
   name_prefix         = local.name_prefix
   website_bucket_name = local.frontend_website_bucket_name
 
@@ -109,7 +114,7 @@ module "frontend_github_oidc_deploy_role" {
   )
 
   frontend_bucket_arn         = module.storage.frontend_website_bucket_arn
-  cloudfront_distribution_arn = var.cloudfront_distribution_arn
+  cloudfront_distribution_arn = module.storage.frontend_cloudfront_distribution_arn
 
   tags = local.common_tags
 }
@@ -133,7 +138,7 @@ module "security" {
 
   ecr_repository_arns          = concat([module.ecr.repository_arn], var.ecr_repository_arns)
   frontend_website_bucket_arn  = module.storage.frontend_website_bucket_arn
-  cloudfront_distribution_arns = var.cloudfront_distribution_arns
+  cloudfront_distribution_arns = concat([module.storage.frontend_cloudfront_distribution_arn], var.cloudfront_distribution_arns)
 
   task_execution_secret_arns = [
     module.database.db_master_user_secret_arn,
